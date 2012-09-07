@@ -888,7 +888,7 @@ def head(argc,argv,hp):
 	showHelp(argv[0])
 
 #Manipulate application settings
-def seti(argc,argv,hp):
+def set(argc,argv,hp):
 	if argc >= 2:
 		action = argv[1]
 		if action == 'uniq':
@@ -1298,7 +1298,7 @@ def help(argc,argv,hp):
 def debug(argc,argv,hp):
 	command = ''
 	if hp.DEBUG == False:
-		print 'Debug is disabled! To enable, try the seti command...'
+		print 'Debug is disabled! To enable, try the set command...'
 		return
 	if argc == 1:
 		showHelp(argv[0])
@@ -1376,7 +1376,7 @@ def showHelp(command):
 					'quickView' :
 						'Save current host data to file'
 				},
-			'seti' : {
+			'set' : {
 					'longListing' :
 						'Description:\n'\
 							'\tAllows you  to view and edit application settings.\n\n'\
@@ -1390,10 +1390,10 @@ def showHelp(command):
 							"\t'iface' changes the network interface in use\n"\
 							"\t'socket' re-sets the multicast IP address and port number used for UPNP discovery\n\n"\
 						'Example:\n'\
-							'\t> seti socket 239.255.255.250:1900\n'\
-							'\t> seti uniq\n\n'\
+							'\t> set socket 239.255.255.250:1900\n'\
+							'\t> set uniq\n\n'\
 						'Notes:\n'\
-							"\tIf given no options, 'seti' will display the current application settings",
+							"\tIf given no options, 'set' will display the current application settings",
 					'quickView' :
 						'Show/define application settings'
 				},
@@ -1634,7 +1634,7 @@ def main(argc,argv):
 			'load' : {
 				'help' : None
 				},
-			'seti' : {
+			'set' : {
 				'uniq' : None,
 				'socket' : None,
 				'show' : None,

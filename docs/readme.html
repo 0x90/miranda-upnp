@@ -52,8 +52,8 @@
 <h3>Description</h3>
 <p>
 	Despite the wide spread use of the Universal Plug-N-Play protocol in applications, operating systems and embedded devices, few tools exist that allow
-	simple discovery and interaction with UPNP-enabled devices. Further, of the tools that do exist, most or all are closed-source Windows binaries.
-	Miranda is a Python-based UPNP client application designed to discover, query and interact with UPNP devices, particularly Internet 
+	simple discovery and interaction with UPnP-enabled devices. Further, of the tools that do exist, most or all are closed-source Windows binaries.
+	Miranda is a Python-based UPnP client application designed to discover, query and interact with UPnP devices, particularly Internet 
 	Gateway Devices (aka, routers). 
 </p>
 
@@ -61,13 +61,14 @@
 <p>
 <ul>
 	<li>Interactive shell with tab completion and command history</li>
-	<li>Passive and active discovery of UPNP devices</li>
+	<li>Passive and active discovery of UPnP devices</li>
 	<li>Customizable MSEARCH queries (query for specific devices/services)</li>
 	<li>Full control over application settings such as IP addresses, ports and headers</li>
-	<li>Simple enumeration of UPNP devices, services, actions and variables</li>
+	<li>Simple enumeration of UPnP devices, services, actions and variables</li>
 	<li>Correlation of input/output state variables with service actions</li>
-	<li>Ability to send actions to UPNP services/devices</li>
+	<li>Ability to send actions to UPnP services/devices</li>
 	<li>Ability to save data to file for later analysis and collaberation</li>
+	<li>Scripting support via batch command files</li>
 	<li>Command logging</li>
 </ul>
 </p>
@@ -91,6 +92,7 @@
 	        -s &lt;struct file&gt;        Load previous host data from struct file
 	        -l &lt;log file&gt;           Log user-supplied commands to log file
 		-i &lt;interface&gt;		Specify the name of the interface to use (Linux only, requires root)
+		-b &lt;batch file&gt;         Process commands from a file
 	        -u                      Disable show-uniq-hosts-only option
 		-v			Enable verbose mode
 	        -d                      Enable debug mode
@@ -105,10 +107,10 @@
 <table cellspacing="10" align="center">
 <tr>
 	<td>msearch</td>
-        <td>Actively locate UPNP hosts</td>
+        <td>Actively locate UPnP hosts</td>
 </tr><tr>	
 	<td>pcap</td>            
-	<td>Passively listen for UPNP hosts</td>
+	<td>Passively listen for UPnP hosts</td>
 </tr><tr>
 	<td>host</td>
         <td>View host list and host information</td>
@@ -125,7 +127,7 @@
 	<td>head</td>            
 	<td>Show/define HTTP headers</td>
 </tr><tr>
-	<td>seti</td>            
+	<td>set</td>            
 	<td>Show/define application settings</td>
 </tr><tr>
 	<td>help</td>            
@@ -152,11 +154,11 @@
 	usage and demonstrate the tool's major capabilities.
 </p>
 
-<h4>Discovering UPNP Hosts</h4>
+<h4>Discovering UPnP Hosts</h4>
 <p>
-	Upon running Miranda, you will be greeted with a 'upnp>' prompt. You will likely wish to discover all UPNP hosts on your
+	Upon running Miranda, you will be greeted with a 'upnp>' prompt. You will likely wish to discover all UPnP hosts on your
 	network first; this can be done with the msearch or pcap commands. The difference is that pcap will passively listen
-	for SSDP notification messages sent out by UPNP hosts, while msearch will actively query the network for UPNP hosts. In
+	for SSDP notification messages sent out by UPnP hosts, while msearch will actively query the network for UPnP hosts. In
 	this example, we will use the msearch command:
 </p>
 <pre>
@@ -174,9 +176,9 @@
 </pre>
 <p>
 	Here you can see that we found one host on the network (in this case, the network's Linksys router). When run without any
-	arguments, the msearch command will query the network for all UPNP root devices. However, if we had only been interested 
-	in UPNP hosts that are of a certian device type, or that offer a particular service, we could have queried the network 
-	for only hosts matching our criteria. For example, to search only for WANDevice UPNP devices, we could have run:
+	arguments, the msearch command will query the network for all UPnP root devices. However, if we had only been interested 
+	in UPnP hosts that are of a certian device type, or that offer a particular service, we could have queried the network 
+	for only hosts matching our criteria. For example, to search only for WANDevice UPnP devices, we could have run:
 </p>
 <pre>
 			upnp> msearch device WANDevice
@@ -188,7 +190,7 @@
 			upnp> msearch service WANIPConnection
 </pre>
 
-<h4>Listing UPNP Hosts</h4>
+<h4>Listing UPnP Hosts</h4>
 <p>
 	The 'host list' command will display all discovered hosts along with their host index number:
 </p>
@@ -212,7 +214,7 @@
 	The first command we will look at is 'host summary'; this command will
 	display a summary of the host, along with the host's device type(s) and device info. Since we haven't enumerated any of the
 	device types and services supported by the Linksys router, this command will only display a couple lines of information that
-	identify the host and the location of the host's main UPNP XML file:
+	identify the host and the location of the host's main UPnP XML file:
 </p>
 <pre>
 			upnp> host summary 0
@@ -246,7 +248,7 @@
 			upnp> host info 0 deviceList
 </pre>
 <p>
-	Because we have not discovered what type of UPNP device the Linksys router is, this command will return no data at this time.
+	Because we have not discovered what type of UPnP device the Linksys router is, this command will return no data at this time.
 </p>
 <p>
 	There is also the 'host details' command that will display all devices, services, actions, arguments, etc, related to a 
@@ -319,7 +321,7 @@
 </pre>
 <p>
 	If we hadn't known that this was a Linksys device before, we do now! The router is actually advertising itself as three
-	UPNP devices: a WANConnectionDevice, a WANDevice, and an InternetGatewayDevice.
+	UPnP devices: a WANConnectionDevice, a WANDevice, and an InternetGatewayDevice.
 </p>
 
 <h4>Saving Your Data</h4>
@@ -340,7 +342,7 @@
 
 <p>
 	If you wish to save your data to share with others or to view at a later date, you can
-	use the 'save data' command. This will save the entire host structure that contains all the information about all of the UPNP hosts
+	use the 'save data' command. This will save the entire host structure that contains all the information about all of the UPnP hosts
 	that you have discovered and enumerated during your session:
 </p>
 <pre>
@@ -409,11 +411,11 @@
 			GetNATRSIPStatus : {}
 </pre>
 
-<h4>Sending UPNP Commands</h4>
+<h4>Sending UPnP Commands</h4>
 <p>
-	Now that we know what devices, services, and actions exist, we can start sending UPNP commands to the Linksys router. We will try
+	Now that we know what devices, services, and actions exist, we can start sending UPnP commands to the Linksys router. We will try
 	running the GetExternalIPAddress action that is supported by the WANIPConnection service offered by the WANConnectionDevice device.
-	To send commands to a UPNP host, use the 'host send' command; you must specify the host index number, the device name, the service 
+	To send commands to a UPnP host, use the 'host send' command; you must specify the host index number, the device name, the service 
 	name, and the action name, in that order. If the action requires any input values, you will be prompted for them automatically, as
 	well as being informed of those value's type, allowed use, and default values/ranges, if any. The GetExternalIPAddress does not
 	require any input, so it runs immediately:
@@ -425,7 +427,7 @@
 </pre>
 <p>
 	The NewExternalIPAddress is the name of the output service state variable associated with the GetExternalIPAddress (some actions have
-	several variables associated with them, but in this case there is only one), and 69.123.45.678 is the value that the UPNP host returned for that variable, which in this case is the IP address of the WAN interface.
+	several variables associated with them, but in this case there is only one), and 69.123.45.678 is the value that the UPnP host returned for that variable, which in this case is the IP address of the WAN interface.
 </p>
 
 <p>
@@ -581,7 +583,7 @@
 <p>
 	Miranda has many other features, and is designed to be self-documenting; all of the shell commands have their own help information
 	that detail usage and sub-commands, and provide descriptions and examples. However, the above command set comprises 99% of what you
-	will probably want to use Miranda for, and details the steps to discover and interact with UPNP devices on your network.
+	will probably want to use Miranda for, and details the steps to discover and interact with UPnP devices on your network.
 </p>
 
 <h3>General Notes</h3>
@@ -589,19 +591,20 @@
 	<ul>
 		<li><b>Base64 Data Types</b>
 			<ul>
-				<li>If an input value's data type is bin.base64, you may enter the data in plain text; Miranda will base64 encode the string before sending it to the UPNP host.</li>
+				<li>If an input value's data type is bin.base64, you may enter the data in plain text; Miranda will base64 encode the string before sending it to the UPnP host.</li>
 				<li>If an output value's data type is bin.base64, Miranda will base64 decode the data before displaying it to you.</li>
 			</ul>
 		</li>
 		<li><b>Debug Mode</b>
 			<ul>
-				<li>By default the debug mode is disabled; it can be enabled by issuing the 'seti debug' command from the Miranda shell, or by specifying the -d option on the command line.</li>
-				<li>In debug mode, the debug command is enabled; this command will eval() whatever you pass to it, which makes it useful for viewing the contents of data structures and the like.</li>
+				<li>By default the debug mode is disabled; it can be enabled by issuing the 'set debug' command from the Miranda shell, or by specifying the -d option on the command line.</li>
+				<li>In debug mode, the SOAP requests sent during UPnP transactions will be displayed.</li>
+				<li>In debug mode, the debug command is also enabled; this command will eval() whatever you pass to it, which makes it useful for viewing the contents of data structures and the like.</li>
 			</ul>
 		</li>
 		<li><b>Duplicate Host Entries</b>
 			<ul>
-				<li>If you run the pcap/msearch commands long enough, they will see the same UPNP hosts re-broadcasting themselves on the network. By default, a host is only reported once, and duplicate discoveries of that host are ignored.</li>
+				<li>If you run the pcap/msearch commands long enough, they will see the same UPnP hosts re-broadcasting themselves on the network. By default, a host is only reported once, and duplicate discoveries of that host are ignored.</li>
 				<li>If you wish for duplicate discoveries to be reported, disable the unique host option using the 'seti uniq' command from the Miranda shell, or by specifying the -u option on the command line.</li>
 			</ul>
 		</li>
@@ -610,11 +613,11 @@
 
 <h3>Contact</h3>
 <p>
-	Send all comments/suggestions/bugs/etc to Craig Heffner, dev [at] sourcesec.com.
+	Send all comments/suggestions/bugs/etc to Craig Heffner, heffnercj [at] gmail.com.
 </p>
 
 <div id="footer">
-	Copyright &copy; 07/16/2008, Craig Heffner
+	Copyright &copy; 2008,2009,2012 Craig Heffner
 </div>
 </body>
 </html>
