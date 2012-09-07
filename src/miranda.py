@@ -74,6 +74,7 @@ class upnp:
 	UNIQ = False
 	DEBUG = False
 	LOG_FILE = False
+	BATCH_FILE = None
 	IFACE = None
 	STARS = '****************************************************************'
 	csock = False
@@ -415,6 +416,10 @@ class upnp:
 		try:
                         sock = socket(AF_INET,SOCK_STREAM)
                         sock.connect((host,port))
+
+			if self.DEBUG:
+				print soapRequest
+
                         sock.send(soapRequest)
                         while True:
 				data = sock.recv(self.MAX_RECV)
@@ -427,7 +432,7 @@ class upnp:
                         sock.close()
 	
 			(header,body) = soapResponse.split('\r\n\r\n',1)
-			if not header.upper().startswith('HTTP/1.1 200'):
+			if not header.upper().startswith('HTTP/1.') and ' 200 ' in header.split('\r\n')[0]:
 				print 'SOAP request failed with error code:',header.split('\r\n')[0].split(' ',1)[1]
 				errorMsg = self.extractSingleTag(body,'errorDescription')
 				if errorMsg:
@@ -440,6 +445,7 @@ class upnp:
                         sock.close()
                         return False
                 except KeyboardInterrupt:
+			print ""
                         sock.close()
 			return False
 
@@ -585,7 +591,13 @@ class upnp:
 		#Get the full path to the service's XML file
 		xmlFile = self.ENUM_HOSTS[index]['proto'] + self.ENUM_HOSTS[index]['name']
 		if not xmlFile.endswith('/') and not service['SCPDURL'].startswith('/'):
-			xmlFile += '/'
+			try:
+				xmlServiceFile = self.ENUM_HOSTS[index]['xmlFile']
+				slashIndex = xmlServiceFile.rfind('/')
+				xmlFile = xmlServiceFile[:slashIndex] + '/'
+			except:
+				xmlFile += '/'
+
 		if self.ENUM_HOSTS[index]['proto'] in service['SCPDURL']:
 			xmlFile = service['SCPDURL']
 		else:
@@ -609,7 +621,6 @@ class upnp:
 				return False
 			actions = actionList.getElementsByTagName(actionTag)
 			if actions == []:
-				print 'Failed to retrieve actions from service actions list for service %s!' % service['fullName']
 				return False
 
 			#Parse all actions in the service's action list
@@ -831,7 +842,7 @@ def msearch(argc,argv,hp):
 		try:
 			hp.parseSSDPInfo(hp.listen(1024,server),False,False)
 		except Exception, e:
-			print 'Discover mode halted...'
+			print '\nDiscover mode halted...'
 			break
 
 #Passively listen for UPNP NOTIFY packets
@@ -842,7 +853,7 @@ def pcap(argc,argv,hp):
 		try:
 			hp.parseSSDPInfo(hp.listen(1024,False),False,False)
 		except Exception, e:
-			print "Passive mode halted..."
+			print "\nPassive mode halted..."
 			break
 
 #Manipulate M-SEARCH header values
@@ -974,6 +985,7 @@ def host(argc,argv,hp):
 					else:
 						print "Can't show host info because I don't have it. Please run 'host get %d'" % index
 				except KeyboardInterrupt, e:
+					print ""
 					pass
 				return
 
@@ -1059,6 +1071,7 @@ def host(argc,argv,hp):
 							hp.updateCmdCompleter(hp.ENUM_HOSTS)
 							return
 					except KeyboardInterrupt, e:
+						print ""
 						return
 
 		elif action == 'send':
@@ -1142,6 +1155,7 @@ def host(argc,argv,hp):
 	
 							sendArgs[argName] = (uInput.strip(),stateVar['dataType'])
 						except KeyboardInterrupt:
+							print ""
 							return
 						print ''
 					else:
@@ -1484,6 +1498,7 @@ Command line usage: %s [OPTIONS]
 	-s <struct file>	Load previous host data from struct file
 	-l <log file>		Log user-supplied commands to log file
 	-i <interface>		Specify the name of the interface to use (Linux only, requires root)
+        -b <batch file>         Process commands from a file
 	-u			Disable show-uniq-hosts-only option
 	-d			Enable debug mode
 	-v			Enable verbose mode
@@ -1494,7 +1509,7 @@ Command line usage: %s [OPTIONS]
 #Check command line options
 def parseCliOpts(argc,argv,hp):
 	try:
-		opts,args = getopt.getopt(argv[1:],'s:l:i:udvh')
+		opts,args = getopt.getopt(argv[1:],'s:l:i:b:udvh')
 	except getopt.GetoptError, e:
 		print 'Usage Error:',e
 		usage()
@@ -1516,6 +1531,9 @@ def parseCliOpts(argc,argv,hp):
 			elif opt == '-v':
 				hp.VERBOSE = toggleVal(hp.VERBOSE)
 				print 'Verbose mode enabled!'
+			elif opt == '-b':
+				hp.BATCH_FILE = open(arg, 'r')
+				print "Processing commands from '%s'..." % arg
 			elif opt == '-h':
 				usage()
 			elif opt == '-i':
@@ -1580,6 +1598,18 @@ def getUserInput(hp,shellPrompt):
 			hp.LOG_FILE.write("%s\n" % uInput)
 		except:
 			print 'Failed to log data to log file!'
+
+	return (argc,argv)
+
+#Reads scripted commands from a file
+def getFileInput(hp):
+	line = hp.BATCH_FILE.readline().strip()
+	argv = line.split()
+	argc = len(argv)
+
+	if argc == 0:
+		argv = ['exit']
+		argc = 1
 
 	return (argc,argv)
 
@@ -1669,7 +1699,10 @@ def main(argc,argv):
 	#Main loop
 	while True:
 		#Drop user into shell
-		(argc,argv) = getUserInput(hp,False)
+		if hp.BATCH_FILE is not None:
+			(argc,argv) = getFileInput(hp)
+		else:
+			(argc,argv) = getUserInput(hp,False)
 		if argc == 0:
 			continue
 		action = argv[0]
@@ -1691,7 +1724,7 @@ def main(argc,argv):
 				try:
 					funcPtr(argc,argv,hp)
 				except KeyboardInterrupt:
-					print 'Action interrupted by user...'
+					print '\nAction interrupted by user...'
 			print ''
 			continue
 		print 'Invalid command. Valid commands are:'
