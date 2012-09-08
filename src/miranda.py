@@ -5,55 +5,57 @@
 # 07/16/2008                   #
 ################################
 
-try:
-	import sys,os
-	import select
-	from socket import *
-	from urllib2 import URLError, HTTPError
-	from platform import system as thisSystem
-	import xml.dom.minidom as minidom
-	import IN,urllib,urllib2
-	import readline,time
-	import pickle
-	import struct
-	import base64
-	import re
-	import getopt
-except Exception,e:
-	print 'Unmet dependency:',e
-	sys.exit(1)
+import sys
+import os
+import re
+import platform
+import xml.dom.minidom as minidom
+import IN
+import urllib
+import urllib2
+import readline
+import time
+import pickle
+import struct
+import base64
+import getopt
+import select
+from socket import *
 
-#Most of the cmdCompleter class was originally written by John Kenyan
-#It serves to tab-complete commands inside the program's shell
-class cmdCompleter:
-    def __init__(self,commands):
-        self.commands = commands
+# Most of the CmdCompleter class was originally written by John Kenyan
+# It serves to tab-complete commands inside the program's shell
+class CmdCompleter:
+	def __init__(self, commands):
+		self.commands = commands
 
-    #Traverses the list of available commands
-    def traverse(self,tokens,tree):
-	retVal = []
+	# Traverses the list of available commands
+	def traverse(self, tokens, tree):
+		retVal = []
 
-	#If there are no commands, or no user input, return null
-	if tree is None or len(tokens) == 0:
-            return []
-	#If there is only one word, only auto-complete the primary commands
-        elif len(tokens) == 1:
-            retVal = [x+' ' for x in tree if x.startswith(tokens[0])]
-	#Else auto-complete for the sub-commands
-        elif tokens[0] in tree.keys():
-                retVal = self.traverse(tokens[1:],tree[tokens[0]])
-	return retVal
+		# If there are no commands, or no user input, return null
+		if tree is None or len(tokens) == 0:
+			retVal = []
+		# If there is only one word, only auto-complete the primary commands
+		elif len(tokens) == 1:
+			retVal = [x+' ' for x in tree if x.startswith(tokens[0])]
+		# Else auto-complete for the sub-commands
+		elif tokens[0] in tree.keys():
+			retVal = self.traverse(tokens[1:],tree[tokens[0]])
 
-    #Returns a list of possible commands that match the partial command that the user has entered
-    def complete(self,text,state):
-        try:
-            tokens = readline.get_line_buffer().split()
-            if not tokens or readline.get_line_buffer()[-1] == ' ':
-                tokens.append('')
-            results = self.traverse(tokens,self.commands) + [None]
-            return results[state]
-        except:
-            return
+		return retVal
+
+	# Returns a list of possible commands that match the partial command that the user has entered
+	def complete(self, text, state):
+		try:
+			tokens = readline.get_line_buffer().split()
+			if not tokens or readline.get_line_buffer()[-1] == ' ':
+				tokens.append('')
+			results = self.traverse(tokens,self.commands) + [None]
+			return results[state]
+		except Exception, e:
+			print "Failed to complete command: %s" % str(e)
+			
+		return
 
 #UPNP class for getting, sending and parsing SSDP/SOAP XML data (among other things...)
 class upnp:
@@ -83,7 +85,7 @@ class upnp:
 
 	def __init__(self,ip,port,iface,appCommands):
 		if appCommands:
-			self.completer = cmdCompleter(appCommands)
+			self.completer = CmdCompleter(appCommands)
 		if self.initSockets(ip,port,iface) == False:
 			print 'UPNP class initialization failed!'
 			print 'Bye!'
@@ -1571,7 +1573,7 @@ def parseCliOpts(argc,argv,hp):
 
 				#Get a list of network interfaces. This only works on unix boxes.
 				try:
-					if thisSystem() != 'Windows':
+					if platform.system() != 'Windows':
 						fp = open('/proc/net/dev','r')
 						for line in fp.readlines():
 							if ':' in line:
