@@ -2,12 +2,12 @@
 ################################
 # Interactive UPNP application #
 # Craig Heffner                #
-# www.sourcesec.com            #
 # 07/16/2008                   #
 ################################
 
 try:
 	import sys,os
+	import select
 	from socket import *
 	from urllib2 import URLError, HTTPError
 	from platform import system as thisSystem
@@ -68,6 +68,7 @@ class upnp:
 	DEFAULT_PORT = 1900
 	UPNP_VERSION = '1.0'
 	MAX_RECV = 8192
+	TIMEOUT = 0
 	HTTP_HEADERS = []
 	ENUM_HOSTS = {}
 	VERBOSE = False
@@ -156,13 +157,23 @@ class upnp:
 			print "SendTo method failed for %s:%d : %s" % (self.ip,self.port,e)
 			return False
 
-	#Listen for network data
-	def listen(self,size,socket):
+	#Receive network data
+	def recv(self,size,socket):
 		if socket == False:
 			socket = self.ssock
 
-		try:
-			return socket.recv(size)
+		if self.TIMEOUT:
+			socket.setblocking(0)
+			ready = select.select([socket], [], [], self.TIMEOUT)[0]
+		else:
+			socket.setblocking(1)
+			ready = True
+	
+		try:	
+			if ready:
+				return socket.recv(size)
+			else:
+				return False
 		except:
 			return False
 
@@ -418,7 +429,10 @@ class upnp:
                         sock.connect((host,port))
 
 			if self.DEBUG:
+				print self.STARS
 				print soapRequest
+				print self.STARS
+				print ''
 
                         sock.send(soapRequest)
                         while True:
@@ -463,7 +477,7 @@ class upnp:
 		try:
 			hostInfo = self.ENUM_HOSTS[index]
 			if hostInfo['dataComplete'] == False:
-				print "Cannot show all host info because we don't have it all yet. Try running 'host info %d' first...\n" % index
+				print "Cannot show all host info because I don't have it all yet. Try running 'host info %d' first...\n" % index
 			fp.write('Host name:         %s\n' % hostInfo['name'])
 			fp.write('UPNP XML File:     %s\n\n' % hostInfo['xmlFile'])
 
@@ -838,9 +852,14 @@ def msearch(argc,argv,hp):
 		return
 
 	hp.send(request,server)
+	start = time.time()
+
 	while True:
 		try:
-			hp.parseSSDPInfo(hp.listen(1024,server),False,False)
+			if hp.TIMEOUT > 0 and (time.time() - start) > hp.TIMEOUT:
+				raise Exception("Timeout exceeded")
+
+			hp.parseSSDPInfo(hp.recv(1024,server),False,False)
 		except Exception, e:
 			print '\nDiscover mode halted...'
 			break
@@ -849,9 +868,15 @@ def msearch(argc,argv,hp):
 def pcap(argc,argv,hp):
 	print 'Entering passive mode, Ctl+C to stop...'
 	print ''
+
+	start = time.time()
+
 	while True:
 		try:
-			hp.parseSSDPInfo(hp.listen(1024,False),False,False)
+			if hp.TIMEOUT > 0 and (time.time() - start) > hp.TIMEOUT:
+				raise Exception ("Timeout exceeded")
+
+			hp.parseSSDPInfo(hp.recv(1024,False),False,False)
 		except Exception, e:
 			print "\nPassive mode halted..."
 			break
@@ -935,12 +960,20 @@ def set(argc,argv,hp):
 				except Exception, e:
 					print 'Caught exception setting new socket:',e	
 				return
+		elif action == 'timeout':
+			if argc == 3:
+				try:
+					hp.TIMEOUT = int(argv[2])
+				except Exception, e:
+					print 'Caught exception setting new timeout value:',e
+				return
 		elif action == 'show':
 			print 'Multicast IP:          ',hp.ip
-			print 'Multicast Port:        ',hp.port
-			print 'Network Interface:     ',hp.IFACE
+			print 'Multicast port:        ',hp.port
+			print 'Network interface:     ',hp.IFACE
+			print 'Receive timeout:       ',hp.TIMEOUT
 			print 'Number of known hosts: ',len(hp.ENUM_HOSTS)
-			print 'UPNP Version:          ',hp.UPNP_VERSION
+			print 'UPNP version:          ',hp.UPNP_VERSION
 			print 'Debug mode:            ',hp.DEBUG
 			print 'Verbose mode:          ',hp.VERBOSE
 			print 'Show only unique hosts:',hp.UNIQ
@@ -1381,14 +1414,15 @@ def showHelp(command):
 						'Description:\n'\
 							'\tAllows you  to view and edit application settings.\n\n'\
 						'Usage:\n'\
-							'\t%s <show | uniq | debug | verbose | version <version #> | iface <interface> | socket <ip:port> >\n'\
+							'\t%s <show | uniq | debug | verbose | version <version #> | iface <interface> | socket <ip:port> | timeout <seconds> >\n'\
 							"\t'show' displays the current program settings\n"\
 							"\t'uniq' toggles the show-only-uniq-hosts setting when discovering UPNP devices\n"\
 							"\t'debug' toggles debug mode\n"\
 							"\t'verbose' toggles verbose mode\n"\
 							"\t'version' changes the UPNP version used\n"\
 							"\t'iface' changes the network interface in use\n"\
-							"\t'socket' re-sets the multicast IP address and port number used for UPNP discovery\n\n"\
+							"\t'socket' re-sets the multicast IP address and port number used for UPNP discovery\n"\
+							"\t'timeout' sets the receive timeout period for the msearch and pcap commands (default: infinite)\n\n"\
 						'Example:\n'\
 							'\t> set socket 239.255.255.250:1900\n'\
 							'\t> set uniq\n\n'\
@@ -1608,8 +1642,8 @@ def getFileInput(hp):
 	argc = len(argv)
 
 	if argc == 0:
-		argv = ['exit']
-		argc = 1
+		hp.BATCH_FILE.close()
+		hp.BATCH_FILE = None
 
 	return (argc,argv)
 
@@ -1642,6 +1676,7 @@ def main(argc,argv):
 				'debug' : None,
 				'version' : None,
 				'verbose' : None,
+				'timeout' : None,
 				'help' : None
 				},
 			'head' : {
@@ -1735,6 +1770,11 @@ def main(argc,argv):
 
 if __name__ == "__main__":
 	try:
+		print ''
+		print 'Miranda v1.2'
+		print 'The interactive UPnP client'
+		print 'Craig Heffner, http://www.devttys0.com'
+		print ''
 		main(len(sys.argv),sys.argv)
 	except Exception, e:
 		print 'Caught main exception:',e
