@@ -1422,7 +1422,7 @@ def showHelp(command):
 							'\t> set socket 239.255.255.250:1900\n'\
 							'\t> set uniq\n\n'\
 						'Notes:\n'\
-							"\tIf given no options, 'set' will display the current application settings",
+							"\tIf given no options, 'set' will display help options",
 					'quickView' :
 						'Show/define application settings'
 				},
