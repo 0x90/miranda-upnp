@@ -1,4 +1,4 @@
-#Sample ENUM_HOSTS structure (truncated...). This structure can be enumerated using the 'host info' command.
+#Sample ENUM_HOSTS structure (services truncated). This structure can be enumerated in Miranda by using the 'host info' command.
 
 self.ENUM_HOSTS[0] = {
 		'name' : '192.168.0.1:5678',
