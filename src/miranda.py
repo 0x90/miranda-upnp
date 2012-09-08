@@ -986,8 +986,10 @@ def set(argc,argv,hp):
 #Host command. It's kind of big.
 def host(argc,argv,hp):
 
+	hostInfo = None
 	indexList = []
 	indexError = "Host index out of range. Try the 'host list' command to get a list of known hosts"
+
 	if argc >= 2:
 		action = argv[1]
 		if action == 'list':
@@ -998,18 +1000,13 @@ def host(argc,argv,hp):
 				print "\t[%d] %s" % (index,hostInfo['name'])
 			return
 		elif action == 'details':
-			hostInfo = False
 			if argc == 3:
 				try:
 					index = int(argv[2])
+					hostInfo = hp.ENUM_HOSTS[index]
 				except Exception, e:
 					print indexError
 					return
-
-				if index < 0 or index >= len(hp.ENUM_HOSTS):
-					print indexError
-					return	
-				hostInfo = hp.ENUM_HOSTS[index]
 
 				try:
 					#If this host data is already complete, just display it
@@ -1069,19 +1066,15 @@ def host(argc,argv,hp):
 			return
 
 		elif action == 'get':
-			hostInfo = False
 			if argc == 3:
 				try:
 					index = int(argv[2])
+					hostInfo = hp.ENUM_HOSTS[index]
 				except:
 					print indexError
 					return
-				if index < 0 or index >= len(hp.ENUM_HOSTS):
-						print "Host index out of range. Try the 'host list' command to get a list of known hosts"
-						return	
-				else:
-					hostInfo = hp.ENUM_HOSTS[index]
-
+			
+				if hostInfo is not None:
 					#If this host data is already complete, just display it
 					if hostInfo['dataComplete'] == True:
 						print 'Data for this host has already been enumerated!'
@@ -1118,13 +1111,13 @@ def host(argc,argv,hp):
 			else:
 				try:
 					index = int(argv[2])
+					hostInfo = hp.ENUM_HOSTS[index]
 				except:
 					print indexError
 					return
 				deviceName = argv[3]
 				serviceName = argv[4]
 				actionName = argv[5]
-				hostInfo = hp.ENUM_HOSTS[index]
 				actionArgs = False
 				sendArgs = {}
 				retTags = []
