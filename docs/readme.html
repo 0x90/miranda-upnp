@@ -77,17 +77,13 @@
 <p>
 	Miranda was built on and for a Linux system and has been tested on a Linux 2.6 kernel with Python 2.5.
 	However, since it is written in Python, most functionality *should* be available for any Python-supported
-	platform.
-</p>
-<p>
-	Miranda has been tested against IGDs from various vendors, including Linksys, D-Link, and ActionTec.
-	All Python modules came installed by default on a Linux Mint 5 (Ubuntu 8.04) test system.
+	platform. No special Python modules are required.
 </p>
 	
 <h3>CLI Usage</h3>
 <p>
 <pre>
-	./miranda.py [OPTIONS]
+	$ ./miranda.py [OPTIONS]
 
 	        -s &lt;struct file&gt;        Load previous host data from struct file
 	        -l &lt;log file&gt;           Log user-supplied commands to log file
@@ -577,6 +573,40 @@
 			Request for 'http://192.168.1.1:2869/WANIPConnCtrlUrl' failed with error code: 500
 			SOAP error message: NoSuchEntryInArray
 
+</pre>
+
+<h4>Scripting UPnP Commands</h4>
+<p>
+Miranda supports a batch mode, which allows you to put Miranda commands into a file that will be run sequentially. For example, the following batch file will:
+
+<ul>
+	<li>Set the max host discovery limit to 1 host</li>
+	<li>Search for an Internet Gateway Device (IGD) on the network</li>
+	<li>Get the XML description files for the first IGD</li>
+	<li>Invoke the GetSpecificPortMappingEntry action</li>
+	<li>Exit Miranda</li>
+</ul>
+</p>
+
+<p>
+Note that the arguments to the GetSpecificPortMappingEntry are entered one per line in the batch file (including any blank lines), just as they would be if you were typing them interactively:
+</p>
+<pre>
+			set max 1
+			msearch device InternetGatewayDevice
+			host get 0
+			host send 0 WANConnectionDevice WANIPConnection GetSpecificPortMappingEntry
+			8080
+			
+			TCP
+			exit
+</pre>
+
+<p>
+The batch file can be loaded with the -b command line switch:
+</p>
+<pre>
+			$ ./miranda.py -b batch.txt
 </pre>
 
 <h4>Conclusion</h4>

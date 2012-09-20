@@ -70,6 +70,7 @@ class upnp:
 	DEFAULT_PORT = 1900
 	UPNP_VERSION = '1.0'
 	MAX_RECV = 8192
+	MAX_HOSTS = 0
 	TIMEOUT = 0
 	HTTP_HEADERS = []
 	ENUM_HOSTS = {}
@@ -296,7 +297,7 @@ class upnp:
 
 		#If this is a notification or a reply message...
 		if messageType != False:
-			#Get the host name and location of it's main UPNP XML file
+			#Get the host name and location of its main UPNP XML file
 			xmlFile = self.parseHeader(data,"LOCATION")
 			upnpType = self.parseHeader(data,"SERVER")
 			(host,page) = self.parseURL(xmlFile)
@@ -350,6 +351,8 @@ class upnp:
 
 			print self.STARS
 			print ''
+			
+			return True
 
 	#Send GET request for a UPNP XML file
 	def getXML(self,url):
@@ -854,14 +857,20 @@ def msearch(argc,argv,hp):
 		return
 
 	hp.send(request,server)
+	count = 0
 	start = time.time()
 
 	while True:
 		try:
+			if hp.MAX_HOSTS > 0 and count >= hp.MAX_HOSTS:
+				break
+
 			if hp.TIMEOUT > 0 and (time.time() - start) > hp.TIMEOUT:
 				raise Exception("Timeout exceeded")
 
-			hp.parseSSDPInfo(hp.recv(1024,server),False,False)
+			if hp.parseSSDPInfo(hp.recv(1024,server),False,False):
+				count += 1
+
 		except Exception, e:
 			print '\nDiscover mode halted...'
 			break
@@ -871,14 +880,20 @@ def pcap(argc,argv,hp):
 	print 'Entering passive mode, Ctl+C to stop...'
 	print ''
 
+	count = 0
 	start = time.time()
 
 	while True:
 		try:
+			if hp.MAX_HOSTS > 0 and count >= hp.MAX_HOSTS:
+				break
+
 			if hp.TIMEOUT > 0 and (time.time() - start) > hp.TIMEOUT:
 				raise Exception ("Timeout exceeded")
 
-			hp.parseSSDPInfo(hp.recv(1024,False),False,False)
+			if hp.parseSSDPInfo(hp.recv(1024,False),False,False):
+				count += 1
+
 		except Exception, e:
 			print "\nPassive mode halted..."
 			break
@@ -969,11 +984,19 @@ def set(argc,argv,hp):
 				except Exception, e:
 					print 'Caught exception setting new timeout value:',e
 				return
+		elif action == 'max':
+			if argc == 3:
+				try:
+					hp.MAX_HOSTS = int(argv[2])
+				except Exception, e:
+					print 'Caught exception setting new max host value:', e
+				return
 		elif action == 'show':
 			print 'Multicast IP:          ',hp.ip
 			print 'Multicast port:        ',hp.port
 			print 'Network interface:     ',hp.IFACE
 			print 'Receive timeout:       ',hp.TIMEOUT
+			print 'Host discovery limit:  ',hp.MAX_HOSTS
 			print 'Number of known hosts: ',len(hp.ENUM_HOSTS)
 			print 'UPNP version:          ',hp.UPNP_VERSION
 			print 'Debug mode:            ',hp.DEBUG
@@ -1191,7 +1214,11 @@ def host(argc,argv,hp):
 
 				#Remove the above inputs from the command history				
 				while inArgCounter:
-					readline.remove_history_item(readline.get_current_history_length()-1)
+					try:
+						readline.remove_history_item(readline.get_current_history_length()-1)
+					except:
+						pass
+
 					inArgCounter -= 1
 
 				#print 'Requesting',controlURL
@@ -1409,7 +1436,7 @@ def showHelp(command):
 						'Description:\n'\
 							'\tAllows you  to view and edit application settings.\n\n'\
 						'Usage:\n'\
-							'\t%s <show | uniq | debug | verbose | version <version #> | iface <interface> | socket <ip:port> | timeout <seconds> >\n'\
+							'\t%s <show | uniq | debug | verbose | version <version #> | iface <interface> | socket <ip:port> | timeout <seconds> | max <count> >\n'\
 							"\t'show' displays the current program settings\n"\
 							"\t'uniq' toggles the show-only-uniq-hosts setting when discovering UPNP devices\n"\
 							"\t'debug' toggles debug mode\n"\
@@ -1417,7 +1444,8 @@ def showHelp(command):
 							"\t'version' changes the UPNP version used\n"\
 							"\t'iface' changes the network interface in use\n"\
 							"\t'socket' re-sets the multicast IP address and port number used for UPNP discovery\n"\
-							"\t'timeout' sets the receive timeout period for the msearch and pcap commands (default: infinite)\n\n"\
+							"\t'timeout' sets the receive timeout period for the msearch and pcap commands (default: infinite)\n"\
+							"\t'max' sets the maximum number of hosts to locate during msearch and pcap discovery modes\n\n"\
 						'Example:\n'\
 							'\t> set socket 239.255.255.250:1900\n'\
 							'\t> set uniq\n\n'\
@@ -1610,6 +1638,10 @@ def toggleVal(val):
 #Prompt for user input
 def getUserInput(hp,shellPrompt):
 	defaultShellPrompt = 'upnp> '
+
+	if hp.BATCH_FILE is not None:
+		return getFileInput(hp)
+
 	if shellPrompt == False:
 		shellPrompt = defaultShellPrompt
 
@@ -1632,11 +1664,16 @@ def getUserInput(hp,shellPrompt):
 
 #Reads scripted commands from a file
 def getFileInput(hp):
-	line = hp.BATCH_FILE.readline().strip()
+	data = False
+	line = hp.BATCH_FILE.readline()
+	if line:
+		data = True
+		line = line.strip()
+
 	argv = line.split()
 	argc = len(argv)
 
-	if argc == 0:
+	if not data:
 		hp.BATCH_FILE.close()
 		hp.BATCH_FILE = None
 
@@ -1672,6 +1709,7 @@ def main(argc,argv):
 				'version' : None,
 				'verbose' : None,
 				'timeout' : None,
+				'max' : None,
 				'help' : None
 				},
 			'head' : {
@@ -1766,7 +1804,7 @@ def main(argc,argv):
 if __name__ == "__main__":
 	try:
 		print ''
-		print 'Miranda v1.2'
+		print 'Miranda v1.3'
 		print 'The interactive UPnP client'
 		print 'Craig Heffner, http://www.devttys0.com'
 		print ''
